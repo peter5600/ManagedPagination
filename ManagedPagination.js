@@ -1,4 +1,4 @@
-class PeterPagination {
+class ManagedPagination {
     //Private fields Not working rn change later
     divToReplace;
     pages;
@@ -253,3 +253,4 @@ class PeterPagination {
 //have a pre load event that lets them load the next n number of pages for the user
 //add first page last page support so users can see last page
 //get page from url support 
+//browser support check what limits browser support i think UUID will affect the most
