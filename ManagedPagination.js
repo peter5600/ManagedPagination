@@ -223,38 +223,102 @@ class ManagedPagination {
         return chars.join('');
     }
 
-    handleOptionalValues(optionalValues){
+    handleOptionalValues(optionalValues) {
         console.log(optionalValues);
-        if('currentPage' in optionalValues){
+        if (typeof optionalValues == 'undefined') {
+            optionalValues = {};
+        }
+        if ('currentPage' in optionalValues) {
             this.currentPage = optionalValues['currentPage'];
-        }else{
+        } else {
             this.currentPage = 1;
         }
 
-        if('itemsPerPage' in optionalValues){
+        if ('itemsPerPage' in optionalValues) {
             this.itemsPerPage = optionalValues['itemsPerPage'];
-        }else{
+        } else {
             this.itemsPerPage = 20;
         }
 
-        if('paginationLength' in optionalValues){
+        if ('paginationLength' in optionalValues) {
             this.paginationLength = optionalValues['paginationLength'];
-        }else{
-            this.paginationLength = 7;//make sure this is odd it works from 1+ 
+        } else {
+            this.paginationLength = 7; //make sure this is odd it works from 1+ 
             //also it works if its greater than the current amount that can be displayed
         }
 
+        if ('globalStyles' in optionalValues) {
+            let globalStyleTag = document.querySelector("#globalPaginationStyles");
+            if (globalStyleTag == null) {
+                //create tag 
+                globalStyleTag = document.createElement('style');
+                globalStyleTag.id = "globalPaginationStyles";
+                document.querySelector("head").appendChild(globalStyleTag); //check if they have a head if not append to html
+            }
+            //list through all of the elements affected and append to page
+            if ('nextPageBtn' in optionalValues['globalStyles']) {
+                let currentTag = globalStyleTag;
+                if ('pseudo' in optionalValues['globalStyles']['nextPageBtn']) {
+                    console.log('pseudo')
+                    let pseduoTag = document.createTextNode(`.pagination#nextPage${optionalValues['globalStyles']['nextPageBtn']['pseudo']}`)
+                    currentTag.appendChild(pseduoTag);
+                }
+                for (const style in optionalValues['globalStyles']['nextPageBtn']) {
+                    console.log(style)
+                    if (style != 'pseduo') {//run a loop that adds them all inside a single tag rather than a tag for all of them
+                        currentTag.appendChild(document.createTextNode(`#nextPage { ${style}: ${optionalValues['globalStyles']['nextPageBtn'][style]}; }`));
+                    }
+                }
+            }
 
+            if ('previousPageBtn' in optionalValues['globalStyles']) {
+                for (const style in optionalValues['globalStyles']['previousPageBtn']) {
+                    globalStyleTag.appendChild(document.createTextNode(`#previousPage { ${style}: ${optionalValues['globalStyles']['previousPageBtn'][style]}; }`));
+                }
+            }
 
+            if ('paginationNumberTag' in optionalValues['globalStyles']) {
+                for (const style in optionalValues['globalStyles']['paginationNumberTag']) {
+                    globalStyleTag.appendChild(document.createTextNode(`.paginationNumber { ${style}: ${optionalValues['globalStyles']['paginationNumberTag'][style]}; }`));
+                }
+            }
+        }
+
+        if ('localStyles' in optionalValues) {
+            let globalStyleTag = document.querySelector("#globalPaginationStyles");
+            if (globalStyleTag == null) {
+                //create tag 
+                globalStyleTag = document.createElement('style');
+                globalStyleTag.id = "globalPaginationStyles";
+                document.querySelector("head").appendChild(globalStyleTag); //check if they have a head if not append to html
+            }
+            if ('nextPageBtn' in optionalValues['localStyles']) {
+                for (const style in optionalValues['localStyles']['nextPageBtn']) {
+                    globalStyleTag.appendChild(document.createTextNode(`#${this.elementID}>#nextPage { ${style}: ${optionalValues['localStyles']['nextPageBtn'][style]}; }`));
+                }
+            }
+
+            if ('previousPageBtn' in optionalValues['localStyles']) {
+                for (const style in optionalValues['localStyles']['previousPageBtn']) {
+                    globalStyleTag.appendChild(document.createTextNode(`#${this.elementID}>#previousPage { ${style}: ${optionalValues['localStyles']['previousPageBtn'][style]}; }`));
+                }
+            }
+
+            if ('paginationNumberTag' in optionalValues['localStyles']) {
+                for (const style in optionalValues['localStyles']['paginationNumberTag']) {
+                    globalStyleTag.appendChild(document.createTextNode(`#${this.elementID}>.paginationNumber { ${style}: ${optionalValues['localStyles']['paginationNumberTag'][style]}; }`));
+                }
+            }
+        }
     }
 
     constructor(divToReplace, items, optionalValues) { //take an object instead of props so i can have any amoubt any orddr
         this.divToReplace = divToReplace;
-        this.handleOptionalValues(optionalValues);
-        
+
         this.items = 200;
-        this.pages = Math.ceil(this.items / this.itemsPerPage);
         this.elementID = this.generateValidUniqueID();
+        this.handleOptionalValues(optionalValues);
+        this.pages = Math.ceil(this.items / this.itemsPerPage);
         this.createPaginationElement()
 
         window.addEventListener("load", () => {
@@ -264,16 +328,19 @@ class ManagedPagination {
 }
 
 //Features
-//Mandatory values and optional - read optional with anm object 
 //Handle changing the page let users define a callback that will be passed the values or let them return the values to us
 //styling let the users change all of the styles that are avaliable
 //add font awesome support
-//add font support
+//add font support seperate from global or local styles so that its applied once have default value be whatever the div its in is 
 //add custom events that users can add themselves
 //have a pre load event that lets them load the next n number of pages for the user
 //add first page last page support so users can see last page
 //get page from url support 
 //browser support check what limits browser support i think UUID will affect the most
+//add optional dropdown that lets them change the number of pages
+//work on making fully responsive and work with different font sizes 
+//maybe look into making a style manager class to split this up and reduce file size
+//eventuyally add server side support for stuff like laravel etc
 
 
 //Github stuff
@@ -282,3 +349,11 @@ class ManagedPagination {
 //how it works
 //the possible errors and why they can be called
 //everything else that a dev might wanna know if they are 
+
+
+//add styles object local styles and global styles
+//if a user adds local styles they only affect the elements of that pagination but global affect all the paginations on the page atm
+//these styles affect three different things first is the paginationn number, next is next and last is last page]
+//create a style tag at the top of the page with an id that everyone affects
+
+//add style support for active as well basically everything i have in the existing css file as well as media queries
