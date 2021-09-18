@@ -53,7 +53,7 @@ class PeterPagination {
     nextPage(e) {
         const pagination = document.querySelector("#"+this.elementID);
         let ActiveElement = pagination.querySelector('.active');
-        const index = this.index(document.getElementsByClassName('active'))
+        const index = this.index(pagination.getElementsByClassName('active'))
         let currentElement = parseInt(ActiveElement.innerHTML);
         if (currentElement + 1 <= this.pages) {
             ActiveElement.classList.remove('active');
@@ -82,7 +82,7 @@ class PeterPagination {
     previousPage(e) {
         const pagination = document.querySelector("#"+this.elementID);
         let ActiveElement = pagination.querySelector('.active');
-        const index = this.index(document.getElementsByClassName('active'))
+        const index = this.index(pagination.getElementsByClassName('active'))
         let currentElement = parseInt(ActiveElement.innerHTML);
 
 
@@ -115,12 +115,11 @@ class PeterPagination {
         const pagination = document.querySelector("#"+this.elementID);
         let ActiveElement = pagination.querySelector('.active');
 
-        const index = this.index(document.getElementsByClassName('active'))
+        const index = this.index(pagination.getElementsByClassName('active'))
         let currentElement = parseInt(ActiveElement.innerHTML);
         let currentTargetElement = this.index(e.currentTarget);
         let currentTargetElementNum = parseInt(e.currentTarget.innerHTML)
         let difference = currentTargetElement - index;
-        debugger;
         if (difference > 0) {
             if (currentElement + 1 <= this.pages) {
                 ActiveElement.classList.remove('active');
@@ -191,16 +190,16 @@ class PeterPagination {
     }
 
     onLoadEventHandler() {
-        document.querySelector("#nextPage").addEventListener('click', (e) => {
+        document.querySelector('#'+this.elementID).querySelector("#nextPage").addEventListener('click', (e) => {
             this.nextPage(e);
         });
 
-        document.querySelector("#previousPage").addEventListener('click', (e) => {
+        document.querySelector('#'+this.elementID).querySelector("#previousPage").addEventListener('click', (e) => {
             this.previousPage(e);
         });
 
 
-        let paginationNumbers = document.getElementsByClassName("paginationNumber");
+        let paginationNumbers = document.querySelector('#'+this.elementID).getElementsByClassName("paginationNumber");
         for (let i = 0; i < paginationNumbers.length; i++) {
             paginationNumbers[i].addEventListener('click', (e) => {
                 this.handlePaginationClick(e);
@@ -254,5 +253,3 @@ class PeterPagination {
 //have a pre load event that lets them load the next n number of pages for the user
 //add first page last page support so users can see last page
 //get page from url support 
-//remove all ids give this element a unique id and use that instead
-//remeber to only apply events based on the outer id
