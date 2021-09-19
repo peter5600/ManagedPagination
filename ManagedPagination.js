@@ -319,18 +319,30 @@ class ManagedPagination {
         }
         for (let index in optionalValues[styleType][objectName]) { //loop through all of the styles
             let styles = optionalValues[styleType][objectName][index];
-            let string;
-            if ('pseudo' in styles) {
-                string = `${selector}${styles['pseudo']}{`;
-            } else {
-                string = `${selector}{`;
-            }
-            for (const style in styles) {
-                if (style != "pseudo") { //run a loop that adds them all inside a single tag rather than a tag for all of them
-                    string += `${style}: ${styles[style]};`;
+            let string = '';
+            if('media' in styles){
+                if('min' in styles['media'] && 'max' in styles['media']){
+                    string += `@media screen and (max-width: ${styles['media']['max']}) and (min-width: ${styles['media']['min']}){\n`
+                }else if('min' in styles['media']){
+                    string += `@media screen and (min-width: ${styles['media']['min']}){\n`
+                }else if('max' in styles['media']){
+                    string += `@media screen and (max-width: ${styles['media']['max']}){\n`
                 }
             }
-            string += `}`;
+            if ('pseudo' in styles) {
+                string += `${selector}${styles['pseudo']}{\n`;
+            } else {
+                string += `${selector}{\n`;
+            }
+            for (const style in styles) {
+                if (style != "pseudo" && style != "media") { //run a loop that adds them all inside a single tag rather than a tag for all of them
+                    string += `\t${style}: ${styles[style]};\n`;
+                }
+            }
+            if('media' in styles){
+                string += `}\n`;
+            }
+            string += `}\n`;
             globalStyleTag.appendChild(document.createTextNode(string));
         }
     }
@@ -381,11 +393,6 @@ class ManagedPagination {
 //add post support as well
 //havily comment the functions with the xml style comments
 
-//add styles object local styles and global styles
-//if a user adds local styles they only affect the elements of that pagination but global affect all the paginations on the page atm
-//these styles affect three different things first is the paginationn number, next is next and last is last page]
-//create a style tag at the top of the page with an id that everyone affects
-
 //add style support for active as well basically everything i have in the existing css file as well as media queries
 
 //Github stuff
@@ -394,6 +401,3 @@ class ManagedPagination {
 //how it works
 //the possible errors and why they can be called
 //everything else that a dev might wanna know if they are 
-
-//Completed Features
-//Font awesome support
