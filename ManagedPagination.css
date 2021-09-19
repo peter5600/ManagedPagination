@@ -1,6 +1,6 @@
 @media only screen and (max-width: 860px) {
     .pagination {
-        a {
+        a{
             padding: 8px 10px !important;
         }
     }
