@@ -15,11 +15,20 @@ class ManagedPagination {
 
         let leftArrow = document.createElement('a');
         leftArrow.id = "previousPage";
-        leftArrow.innerHTML = "&laquo;";
+        if (typeof this.fontAwesomePreviousArrow == 'undefined') {
+            leftArrow.innerHTML = "&laquo;";
+        }else{
+            leftArrow.innerHTML = this.fontAwesomePreviousArrow;
+        }
 
         let rightArrow = document.createElement('a');
         rightArrow.id = "nextPage";
-        rightArrow.innerHTML = "&raquo;";
+        if (typeof this.fontAwesomeNextArrow == 'undefined') {
+            rightArrow.innerHTML = "&raquo;";
+        }else{
+            rightArrow.innerHTML = this.fontAwesomeNextArrow;
+        }
+        
 
         let pageNumbersToShow = 0;
         if (this.pages < this.paginationLength && this.pages > 1) {
@@ -231,8 +240,9 @@ class ManagedPagination {
         if ('currentPage' in optionalValues) {
             this.currentPage = optionalValues['currentPage'];
         } else {
-            this.currentPage = 1;
+            this.currentPage = this.getCurrentPage();
         }
+        console.log(this.currentPage);
 
         if ('itemsPerPage' in optionalValues) {
             this.itemsPerPage = optionalValues['itemsPerPage'];
@@ -248,64 +258,63 @@ class ManagedPagination {
         }
 
         if ('globalStyles' in optionalValues) {
-            let globalStyleTag = document.querySelector("#globalPaginationStyles");
-            if (globalStyleTag == null) {
-                //create tag 
-                globalStyleTag = document.createElement('style');
-                globalStyleTag.id = "globalPaginationStyles";
-                document.querySelector("head").appendChild(globalStyleTag); //check if they have a head if not append to html
-            }
             //list through all of the elements affected and append to page
             if ('nextPageBtn' in optionalValues['globalStyles']) {
-                this.handleStyle(globalStyleTag,optionalValues, "#nextPage")
+                this.handleStyle(optionalValues, "#nextPage")
             }
 
             if ('previousPageBtn' in optionalValues['globalStyles']) {
-                this.handleStyle(globalStyleTag,optionalValues, "#previousPage")
+                this.handleStyle(optionalValues, "#previousPage")
             }
 
             if ('paginationNumberTag' in optionalValues['globalStyles']) {
-                this.handleStyle(globalStyleTag,optionalValues, ".paginationNumber")
+                this.handleStyle(optionalValues, ".paginationNumber")
             }
         }
 
         if ('localStyles' in optionalValues) {
-            let globalStyleTag = document.querySelector("#globalPaginationStyles");
-            if (globalStyleTag == null) {
-                //create tag 
-                globalStyleTag = document.createElement('style');
-                globalStyleTag.id = "globalPaginationStyles";
-                document.querySelector("head").appendChild(globalStyleTag); //check if they have a head if not append to html
-            }
             if ('nextPageBtn' in optionalValues['localStyles']) {
-                debugger;
-                this.handleStyle(globalStyleTag,optionalValues, `#${this.elementID} > #nextPage`, false)
+                this.handleStyle(optionalValues, `#${this.elementID} > #nextPage`, false)
             }
 
             if ('previousPageBtn' in optionalValues['localStyles']) {
-                this.handleStyle(globalStyleTag,optionalValues, `#${this.elementID} > #previousPage`, false)
+                this.handleStyle(optionalValues, `#${this.elementID} > #previousPage`, false)
             }
 
             if ('paginationNumberTag' in optionalValues['localStyles']) {
-                this.handleStyle(globalStyleTag,optionalValues, `#${this.elementID} > .paginationNumber`, false)
+                this.handleStyle(optionalValues, `#${this.elementID} > .paginationNumber`, false)
+            }
+        }
+
+        if ('fontAwesome' in optionalValues) {
+            if ('nextPageBtn' in optionalValues['fontAwesome']) {
+                this.fontAwesomeNextArrow = optionalValues['fontAwesome']['nextPageBtn'];
+            }
+            if ('previousPageBtn' in optionalValues['fontAwesome']) {
+                this.fontAwesomePreviousArrow = optionalValues['fontAwesome']['previousPageBtn'];
             }
         }
     }
 
-    handleStyle(globalStyleTag, optionalValues, selector, isGlobal = true) {
-        let currentTag = globalStyleTag;
-        let objectName;
+    handleStyle(optionalValues, selector, isGlobal = true) {
+        let globalStyleTag = document.querySelector("#globalPaginationStyles");
+        if (globalStyleTag == null) {
+            globalStyleTag = document.createElement('style');
+            globalStyleTag.id = "globalPaginationStyles";
+            document.querySelector("head").appendChild(globalStyleTag); //check if they have a head if not append to html
+        }
         let styleType;
-        if(isGlobal){
+        if (isGlobal) {
             styleType = 'globalStyles'
-        }else{
+        } else {
             styleType = 'localStyles'
         }
-        if(selector.includes("#nextPage")){
+        let objectName;
+        if (selector.includes("#nextPage")) {
             objectName = "nextPageBtn";
-        }else if(selector.includes("#previousPage")){
+        } else if (selector.includes("#previousPage")) {
             objectName = "previousPageBtn";
-        }else if(selector.includes(".paginationNumber")){
+        } else if (selector.includes(".paginationNumber")) {
             objectName = "paginationNumberTag";
         }
         for (let index in optionalValues[styleType][objectName]) { //loop through all of the styles
@@ -322,8 +331,24 @@ class ManagedPagination {
                 }
             }
             string += `}`;
-            currentTag.appendChild(document.createTextNode(string));
+            globalStyleTag.appendChild(document.createTextNode(string));
         }
+    }
+
+    getCurrentPage() {
+        //get current page num from url
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+
+        if (urlParams.has('pagenum')) {
+            const pageNum = urlParams.get('pagenum');
+            if (!isNaN(pageNum)) {
+                return pageNum
+            }
+        }
+        return 1;
+
+
     }
 
     constructor(divToReplace, items, optionalValues) { //take an object instead of props so i can have any amoubt any orddr
@@ -343,8 +368,6 @@ class ManagedPagination {
 
 //Features
 //Handle changing the page let users define a callback that will be passed the values or let them return the values to us
-//add font awesome support
-//add font support seperate from global or local styles so that its applied once have default value be whatever the div its in is 
 //add custom events that users can add themselves
 //have a pre load event that lets them load the next n number of pages for the user
 //add first page last page support so users can see last page
@@ -358,6 +381,12 @@ class ManagedPagination {
 //add post support as well
 //havily comment the functions with the xml style comments
 
+//add styles object local styles and global styles
+//if a user adds local styles they only affect the elements of that pagination but global affect all the paginations on the page atm
+//these styles affect three different things first is the paginationn number, next is next and last is last page]
+//create a style tag at the top of the page with an id that everyone affects
+
+//add style support for active as well basically everything i have in the existing css file as well as media queries
 
 //Github stuff
 //define all of the options
@@ -366,10 +395,5 @@ class ManagedPagination {
 //the possible errors and why they can be called
 //everything else that a dev might wanna know if they are 
 
-
-//add styles object local styles and global styles
-//if a user adds local styles they only affect the elements of that pagination but global affect all the paginations on the page atm
-//these styles affect three different things first is the paginationn number, next is next and last is last page]
-//create a style tag at the top of the page with an id that everyone affects
-
-//add style support for active as well basically everything i have in the existing css file as well as media queries
+//Completed Features
+//Font awesome support
