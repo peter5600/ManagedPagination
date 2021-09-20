@@ -6,6 +6,8 @@ class ManagedPagination {
     items;
     paginationLength;
     elementID; //unique id that can be used to allow multiple paginations on page at the same time
+    method;
+    callback;
 
     createPaginationElement() {
         let paginationDiv = document.createElement('div');
@@ -114,7 +116,6 @@ class ManagedPagination {
                 //not dynamic
                 document.querySelectorAll('#' + this.elementID + ' > *')[index - 1].classList.add('active')
             }
-
         }
         e.preventDefault();
     }
@@ -200,10 +201,12 @@ class ManagedPagination {
     onLoadEventHandler() {
         document.querySelector('#' + this.elementID).querySelector("#nextPage").addEventListener('click', (e) => {
             this.nextPage(e);
+            this.handleCallback();
         });
 
         document.querySelector('#' + this.elementID).querySelector("#previousPage").addEventListener('click', (e) => {
             this.previousPage(e);
+            this.handleCallback();
         });
 
 
@@ -211,6 +214,7 @@ class ManagedPagination {
         for (let i = 0; i < paginationNumbers.length; i++) {
             paginationNumbers[i].addEventListener('click', (e) => {
                 this.handlePaginationClick(e);
+                this.handleCallback();
             });
         }
 
@@ -363,9 +367,16 @@ class ManagedPagination {
 
     }
 
-    constructor(divToReplace, items, optionalValues) { //take an object instead of props so i can have any amoubt any orddr
+    handleCallback(){
+        const pagination = document.querySelector("#" + this.elementID);
+        this.currentPage = parseInt(pagination.getElementsByClassName('active')[0].innerHTML);
+        this.callback(this.currentPage, this.itemsPerPage);
+    }
+    constructor(divToReplace, items,method,callback, optionalValues) { //take an object instead of props so i can have any amoubt any orddr
         this.divToReplace = divToReplace;
 
+        this.method = method;
+        this.callback = callback;
         this.items = 200;
         this.elementID = this.generateValidUniqueID();
         this.handleOptionalValues(optionalValues);
@@ -374,6 +385,7 @@ class ManagedPagination {
 
         window.addEventListener("load", () => {
             this.onLoadEventHandler();
+            this.callback(this.currentPage, this.itemsPerPage);//pass the page number and number of elements on that page
         });
     }
 }
@@ -391,9 +403,16 @@ class ManagedPagination {
 //eventuyally add server side support for stuff like laravel etc
 //add get support so that when a page is clicked it adds it to the url and reloads the page
 //add post support as well
-//havily comment the functions with the xml style comments
+//heavily comment the functions with the xml style comments
+//instead of strings use enums instead
 
 //add style support for active as well basically everything i have in the existing css file as well as media queries
+
+//methods to load the content
+//have everything loaded all at once.
+//use get statements and recieve everything would need to know the total number of items for this approach
+//same as get but support post statements as well again would need the total number of items
+//ill need a new statement for this like method: which can be preloaded, get or post
 
 //Github stuff
 //define all of the options
