@@ -3,11 +3,13 @@ class ManagedPagination {
     divToReplace;
     pages;
     itemsPerPage;
-    items;
+    itemCount;
     paginationLength;
     elementID; //unique id that can be used to allow multiple paginations on page at the same time
     method;
     callback;
+    failedState;
+    supportedMethods = ["preloaded", "get", "post", "custom"];
 
     createPaginationElement() {
         let paginationDiv = document.createElement('div');
@@ -19,7 +21,7 @@ class ManagedPagination {
         leftArrow.id = "previousPage";
         if (typeof this.fontAwesomePreviousArrow == 'undefined') {
             leftArrow.innerHTML = "&laquo;";
-        }else{
+        } else {
             leftArrow.innerHTML = this.fontAwesomePreviousArrow;
         }
 
@@ -27,10 +29,10 @@ class ManagedPagination {
         rightArrow.id = "nextPage";
         if (typeof this.fontAwesomeNextArrow == 'undefined') {
             rightArrow.innerHTML = "&raquo;";
-        }else{
+        } else {
             rightArrow.innerHTML = this.fontAwesomeNextArrow;
         }
-        
+
 
         let pageNumbersToShow = 0;
         if (this.pages < this.paginationLength && this.pages > 1) {
@@ -324,12 +326,12 @@ class ManagedPagination {
         for (let index in optionalValues[styleType][objectName]) { //loop through all of the styles
             let styles = optionalValues[styleType][objectName][index];
             let string = '';
-            if('media' in styles){
-                if('min' in styles['media'] && 'max' in styles['media']){
+            if ('media' in styles) {
+                if ('min' in styles['media'] && 'max' in styles['media']) {
                     string += `@media screen and (max-width: ${styles['media']['max']}) and (min-width: ${styles['media']['min']}){\n`
-                }else if('min' in styles['media']){
+                } else if ('min' in styles['media']) {
                     string += `@media screen and (min-width: ${styles['media']['min']}){\n`
-                }else if('max' in styles['media']){
+                } else if ('max' in styles['media']) {
                     string += `@media screen and (max-width: ${styles['media']['max']}){\n`
                 }
             }
@@ -343,7 +345,7 @@ class ManagedPagination {
                     string += `\t${style}: ${styles[style]};\n`;
                 }
             }
-            if('media' in styles){
+            if ('media' in styles) {
                 string += `}\n`;
             }
             string += `}\n`;
@@ -367,28 +369,112 @@ class ManagedPagination {
 
     }
 
-    handleCallback(){
+    handleCallback() {
         const pagination = document.querySelector("#" + this.elementID);
         this.currentPage = parseInt(pagination.getElementsByClassName('active')[0].innerHTML);
         this.callback(this.currentPage, this.itemsPerPage);
     }
-    constructor(divToReplace, items,method,callback, optionalValues) { //take an object instead of props so i can have any amoubt any orddr
+
+    handlePreLoaded(requiredValues) {
+        const pagination = document.querySelector("#" + this.elementID);
+        this.currentPage = parseInt(pagination.getElementsByClassName('active')[0].innerHTML);
+        //we have current page and items per page
+        [...document.querySelectorAll(requiredValues['itemsSelector'] + ' > *')].slice(0 + ((this.currentPage -1) * this.itemsPerPage), this.itemsPerPage + ((this.currentPage -1) * this.itemsPerPage)).forEach((child) => {
+            console.log(child)
+        });
+    }
+
+    handleGet(requiredValues) {
+
+    }
+
+    handlePost(requiredValues) {
+
+    }
+
+    handleCustom(requiredValues) {
+
+    }
+
+    handleRequiredValues(method, requiredValues) {
+        /* structure
+            Method : String - What method is it
+            preloaded:
+                itemsSelector : HTMLCollection - This is the div or container that has all of the elements in
+                itemSelector : String - This is the selector that will be displayed 
+            get:
+                paramName : String - The name of the param in the URL
+                callback : OPTIONAL function - Before its sent this callback is called
+                onLoad: function - Loaded on page load because its a GET
+            post: 
+                formElementName : String - name of form element to be posted to the backend
+                formname : OPTIONAL String - form name that the element should be added to
+                endPoint : String - End point to post to
+                callback : OPTIONAL function - Before its posted this function will be run
+                onLoad : function - Loaded on page load 
+            custom:
+                callback : function - Callback that passes index and size so that callback can display them or filter away
+                
+        */
+        let m = method.trim().toLowerCase()
+        if (this.supportedMethods.includes(m)) {
+            switch (m) {
+                case "preloaded":
+                    if (typeof requiredValues['itemsSelector'] != 'undefined' && typeof requiredValues['itemSelector'] != 'undefined') {
+                        this.handlePreLoaded(requiredValues);
+                    } else {
+                        //throw error
+                    }
+                    break;
+                case "get":
+                    this.handleGet(requiredValues);
+                    break;
+                case "post":
+                    this.handlePost(requiredValues);
+                    break;
+                case "custom":
+                    if (typeof requiredValues['callback'] != 'undefined') {
+                        this.handleCustom(requiredValues);
+                    } else {
+                        //throw error
+                    }
+
+                    break;
+            }
+        } else {
+            //throw error 
+            throw new Error("Please choose a method, from the list of available methods.")
+        }
+    }
+    constructor(divToReplace, itemCount, method, requiredValues, optionalValues = null) { //take an object instead of props so i can have any amoubt any orddr
         this.divToReplace = divToReplace;
 
-        this.method = method;
-        this.callback = callback;
-        this.items = 200;
+        this.itemCount = 200;
         this.elementID = this.generateValidUniqueID();
-        this.handleOptionalValues(optionalValues);
-        this.pages = Math.ceil(this.items / this.itemsPerPage);
-        this.createPaginationElement()
+
+        if (optionalValues != null) {
+            this.handleOptionalValues(optionalValues);
+        }
+        this.pages = Math.ceil(this.itemCount / this.itemsPerPage);
+        this.createPaginationElement();
+        this.handleRequiredValues(method,requiredValues);
 
         window.addEventListener("load", () => {
             this.onLoadEventHandler();
-            this.callback(this.currentPage, this.itemsPerPage);//pass the page number and number of elements on that page
         });
     }
 }
+
+
+//To handle method i will ask for the method values with is a required object
+//There will always be the method : "" param that takes the method and then based on this i check for the required values
+//different methods
+//pre loaded, GET, POST, custom
+//Pre loaded - All of the elements are present in the DOM but need to be handled in a callback
+//GET the elements are loaded based on page number so i need to use a GET method to refresh the page and pass the page num
+//POST same as get but loaded with a post param inside a form
+//custom i just have a callback function the user handles everything inside themselves this includes ajax
+
 
 //Features
 //Handle changing the page let users define a callback that will be passed the values or let them return the values to us
@@ -405,6 +491,7 @@ class ManagedPagination {
 //add post support as well
 //heavily comment the functions with the xml style comments
 //instead of strings use enums instead
+//look into using AJAX methods as well as what is supported
 
 //add style support for active as well basically everything i have in the existing css file as well as media queries
 
