@@ -10,6 +10,8 @@ class ManagedPagination {
     callback;
     failedState;
     supportedMethods = ["preloaded", "get", "post", "custom"];
+    requiredValues;
+    handlePageTransition;
 
     createPaginationElement() {
         let paginationDiv = document.createElement('div');
@@ -89,6 +91,7 @@ class ManagedPagination {
             }
 
         }
+        this.handlePageTransition();
         e.preventDefault();
     }
 
@@ -119,6 +122,7 @@ class ManagedPagination {
                 document.querySelectorAll('#' + this.elementID + ' > *')[index - 1].classList.add('active')
             }
         }
+        this.handlePageTransition();
         e.preventDefault();
     }
 
@@ -197,6 +201,7 @@ class ManagedPagination {
                 }
             }
         }
+        this.handlePageTransition();
         e.preventDefault();
     }
 
@@ -222,7 +227,7 @@ class ManagedPagination {
 
     }
 
-    index(node) { //JQuery equivalent of index
+    index(node) { //S equivalent of JQuery index
         if (NodeList.prototype.isPrototypeOf(node) || HTMLCollection.prototype.isPrototypeOf(node)) {
             node = node[0]
         }
@@ -230,17 +235,18 @@ class ManagedPagination {
     }
 
     generateValidUniqueID() {
-        let id = crypto.randomUUID();
+        /*let id = crypto.randomUUID();
         let chars = id.split('');
         //generate random num
         let letter = String.fromCharCode(Math.random() * (123 - 97) + 97); //dosent include 123 so a-z
         chars[0] = letter; //cant have first charecter in id be a number
-        return chars.join('');
+        return chars.join('');*/
+        return "reallyLongComplexID" + Math.floor((Math.random() * (1000 - 1) + 1));
     }
 
     handleOptionalValues(optionalValues) {
         console.log(optionalValues);
-        if (typeof optionalValues == 'undefined') {
+        if (typeof optionalValues == 'undefined' || optionalValues == null) {
             optionalValues = {};
         }
         if ('currentPage' in optionalValues) {
@@ -375,33 +381,37 @@ class ManagedPagination {
         this.callback(this.currentPage, this.itemsPerPage);
     }
 
-    handlePreLoaded(requiredValues) {
+    handlePreLoaded() {
         const pagination = document.querySelector("#" + this.elementID);
         this.currentPage = parseInt(pagination.getElementsByClassName('active')[0].innerHTML);
+        document.querySelectorAll(this.requiredValues['container'] + ' > ' + this.requiredValues['item']).style = "display : none;";
         //we have current page and items per page
-        [...document.querySelectorAll(requiredValues['itemsSelector'] + ' > *')].slice(0 + ((this.currentPage -1) * this.itemsPerPage), this.itemsPerPage + ((this.currentPage -1) * this.itemsPerPage)).forEach((child) => {
+        [...document.querySelectorAll(this.requiredValues['container'] + ' > ' + this.requiredValues['item'])].slice(0 + ((this.currentPage - 1) * this.itemsPerPage), this.itemsPerPage + ((this.currentPage - 1) * this.itemsPerPage)).forEach((child) => {
             console.log(child)
+            child.style = "display: block";
         });
     }
 
-    handleGet(requiredValues) {
+    handleGet() {
+        
+    }
+
+    handlePost() {
 
     }
 
-    handlePost(requiredValues) {
-
-    }
-
-    handleCustom(requiredValues) {
-
+    handleCustom() {
+        const pagination = document.querySelector("#" + this.elementID);
+        this.currentPage = parseInt(pagination.getElementsByClassName('active')[0].innerHTML);
+        this.requiredValues['callback'](this.currentPage, this.itemsPerPage);
     }
 
     handleRequiredValues(method, requiredValues) {
         /* structure
             Method : String - What method is it
             preloaded:
-                itemsSelector : HTMLCollection - This is the div or container that has all of the elements in
-                itemSelector : String - This is the selector that will be displayed 
+                container : String - This is the div or container that has all of the elements in
+                item : String - This is the selector that will be displayed 
             get:
                 paramName : String - The name of the param in the URL
                 callback : OPTIONAL function - Before its sent this callback is called
@@ -418,32 +428,47 @@ class ManagedPagination {
         */
         let m = method.trim().toLowerCase()
         if (this.supportedMethods.includes(m)) {
+            this.requiredValues = requiredValues;
             switch (m) {
                 case "preloaded":
-                    if (typeof requiredValues['itemsSelector'] != 'undefined' && typeof requiredValues['itemSelector'] != 'undefined') {
-                        this.handlePreLoaded(requiredValues);
+                    if (typeof requiredValues['container'] != 'undefined' &&
+                        typeof requiredValues['item'] != 'undefined') {
+                        this.handlePageTransition = this.handlePreLoaded;
                     } else {
                         //throw error
                     }
                     break;
                 case "get":
-                    this.handleGet(requiredValues);
-                    break;
-                case "post":
-                    this.handlePost(requiredValues);
-                    break;
-                case "custom":
-                    if (typeof requiredValues['callback'] != 'undefined') {
-                        this.handleCustom(requiredValues);
+                    if (typeof requiredValues['paramName'] != 'undefined' &&
+                        typeof requiredValues['onLoad'] != 'undefined') {
+                        this.handlePageTransition = this.handleGet;
                     } else {
                         //throw error
                     }
-
+                    break;
+                case "post":
+                    if (typeof requiredValues['formElementName'] != 'undefined' &&
+                        typeof requiredValues['endpoint'] != 'undefined' &&
+                        typeof requiredValues['onLoad'] != 'undefined') {
+                        this.handlePageTransition = this.handlePost;
+                    }
+                    break;
+                case "custom":
+                    if (typeof requiredValues['callback'] != 'undefined') {
+                        const pagination = document.querySelector("#" + this.elementID);
+                        this.currentPage = parseInt(pagination.getElementsByClassName('active')[0].innerHTML);
+                        requiredValues['callback'](this.currentPage, this.itemsPerPage);
+                        this.handlePageTransition = this.handleCustom;
+                    } else {
+                        //throw error
+                    }
                     break;
             }
+            //run it the first time
+            this.handlePageTransition();
         } else {
             //throw error 
-            throw new Error("Please choose a method, from the list of available methods.")
+            throw new Error("Please choose a method, from the list of available methods.\n" + this.supportedMethods)
         }
     }
     constructor(divToReplace, itemCount, method, requiredValues, optionalValues = null) { //take an object instead of props so i can have any amoubt any orddr
@@ -452,12 +477,10 @@ class ManagedPagination {
         this.itemCount = 200;
         this.elementID = this.generateValidUniqueID();
 
-        if (optionalValues != null) {
-            this.handleOptionalValues(optionalValues);
-        }
+        this.handleOptionalValues(optionalValues);
         this.pages = Math.ceil(this.itemCount / this.itemsPerPage);
         this.createPaginationElement();
-        this.handleRequiredValues(method,requiredValues);
+        this.handleRequiredValues(method, requiredValues);
 
         window.addEventListener("load", () => {
             this.onLoadEventHandler();
@@ -481,7 +504,7 @@ class ManagedPagination {
 //add custom events that users can add themselves
 //have a pre load event that lets them load the next n number of pages for the user
 //add first page last page support so users can see last page
-//get page from url support 
+//get page from url support - add the function for this
 //browser support check what limits browser support i think UUID will affect the most
 //add optional dropdown that lets them change the number of pages
 //work on making fully responsive and work with different font sizes 
@@ -492,6 +515,7 @@ class ManagedPagination {
 //heavily comment the functions with the xml style comments
 //instead of strings use enums instead
 //look into using AJAX methods as well as what is supported
+
 
 //add style support for active as well basically everything i have in the existing css file as well as media queries
 
