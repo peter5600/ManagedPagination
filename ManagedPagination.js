@@ -359,13 +359,13 @@ class ManagedPagination {
         }
     }
 
-    getCurrentPage() {
+    getCurrentPage(paramName = "pagenum") {
         //get current page num from url
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
 
-        if (urlParams.has('pagenum')) {
-            const pageNum = urlParams.get('pagenum');
+        if (urlParams.has(paramName)) {
+            const pageNum = urlParams.get(paramName);
             if (!isNaN(pageNum)) {
                 return pageNum
             }
@@ -387,17 +387,74 @@ class ManagedPagination {
         document.querySelectorAll(this.requiredValues['container'] + ' > ' + this.requiredValues['item']).style = "display : none;";
         //we have current page and items per page
         [...document.querySelectorAll(this.requiredValues['container'] + ' > ' + this.requiredValues['item'])].slice(0 + ((this.currentPage - 1) * this.itemsPerPage), this.itemsPerPage + ((this.currentPage - 1) * this.itemsPerPage)).forEach((child) => {
-            console.log(child)
             child.style = "display: block";
         });
     }
 
-    handleGet() {
-        
+    handleFormSimple() {
+        //create a custom function for page transition
+        let paramName;
+        if (typeof this.requiredValues['paramName'] != 'undefined') {
+            paramName = this.requiredValues['paramName'];
+        } else {
+            paramName = 'pageNum';
+        }
+        this.handlePageTransition = () => {
+            if (typeof this.requiredValues['callback'] != 'undefined') {
+                this.requiredValues['callback']();
+            }
+            let form;
+            form = document.createElement('form');
+            form.id = "formToRefreshPage" + this.elementID;
+            let endpoint;
+            if (typeof this.requiredValues['endpoint'] == 'undefined') {
+                endpoint = window.location.href;
+            } else {
+                endpoint = this.requiredValues['endpoint'];
+            }
+            form.action = endpoint;
+            form.method = 'GET';
+            document.querySelector('body').appendChild(form);
+
+            let pageNum = document.createElement('input');
+            pageNum.type = 'hidden';
+            pageNum.name = paramName;
+            const pagination = document.querySelector("#" + this.elementID);
+            this.currentPage = parseInt(pagination.getElementsByClassName('active')[0].innerHTML);
+            pageNum.value = this.currentPage;
+            form.appendChild(pageNum);
+            form.submit();
+        }
+        window.addEventListener('load', () => {
+            const pageNum = getCurrentPage(paramName);
+            //set pagenum equal to this num need to cycle across to this page
+            this.requiredValues['onLoad'](pageNum, this.itemsPerPage);
+        })
     }
 
-    handlePost() {
-
+    handleFormComplex() {
+        this.handlePageTransition = () => {
+            if (typeof this.requiredValues['callback'] != 'undefined') {
+                this.requiredValues['callback']();
+            }
+            const form = document.querySelector(this.requiredValues['formSelector']);
+            if (NodeList.prototype.isPrototypeOf(node) || HTMLCollection.prototype.isPrototypeOf(node)) {
+                form = form[0];//if its an array of elements select the first one
+            }
+            let pageNum = document.createElement('input');
+            pageNum.type = 'hidden';
+            pageNum.name = this.requiredValues['formInputName'];
+            const pagination = document.querySelector("#" + this.elementID);
+            this.currentPage = parseInt(pagination.getElementsByClassName('active')[0].innerHTML);
+            pageNum.value = this.currentPage;
+            form.appendChild(pageNum);
+            form.submit();
+        }
+        //handle onload event
+        window.addEventListener('load', () => {
+            const pageNum = this.requiredValues['pageNum'];
+            this.requiredValues['onLoad'](pageNum, this.itemsPerPage);
+        })
     }
 
     handleCustom() {
@@ -410,21 +467,34 @@ class ManagedPagination {
         /* structure
             Method : String - What method is it
             preloaded:
+                //Simplest solution is to load all of the elements on the screen and hide them and then display
+                //Them in section
                 container : String - This is the div or container that has all of the elements in
                 item : String - This is the selector that will be displayed 
-            get:
-                paramName : String - The name of the param in the URL
+            formSimple:
+                //This is just create a form and submit it
+                paramName : OPTUONAL String - The name of the param in the URL
                 callback : OPTIONAL function - Before its sent this callback is called
-                onLoad: function - Loaded on page load because its a GET
-            post: 
-                formElementName : String - name of form element to be posted to the backend
-                formname : OPTIONAL String - form name that the element should be added to
-                endPoint : String - End point to post to
-                callback : OPTIONAL function - Before its posted this function will be run
-                onLoad : function - Loaded on page load 
-            custom:
-                callback : function - Callback that passes index and size so that callback can display them or filter away
+                onLoad: function - Loaded on page load
+                endPoint : OPTIONAL string - The endpoint for the form to send the information
+            formComplex:
+                //This is find an existing form and add the value then trigger the submit
+                callback : OPTIONAL function - Before its sent this callback is called
+                onLoad: function - Loaded on page load
+                formSelector : String - This is the name of the form i am adding the input to.
+                formInputName : String - This is the name of the element added to the form.
+                pageNum : Int - This is the current page num can't be grabbed via GET with param name because this form could use
+                POST which clears any URL params. I could ask them to include it in a query string but that would involve extra effort 
+                could be a future feature though to support telling me the pageNum or passing it in a query string that I can grab for them
                 
+            custom:
+                //Designed for ajax calls to get items rather than for refreshing the page but 
+                //I want to add a set page function which could be used if they want to refresh the page inside of this function
+                callback : function - Callback that passes index and size so that callback can display them or filter away
+            
+            Some of these can be done in multiple ways like having a form with existing inputs or not
+            Make sure to show all of the methods and probably change the optional system to different methods that exist
+            within the existing method
         */
         let m = method.trim().toLowerCase()
         if (this.supportedMethods.includes(m)) {
@@ -434,25 +504,24 @@ class ManagedPagination {
                     if (typeof requiredValues['container'] != 'undefined' &&
                         typeof requiredValues['item'] != 'undefined') {
                         this.handlePageTransition = this.handlePreLoaded;
+                        this.handlePageTransition();//call the first time
                     } else {
                         //throw error
                     }
                     break;
-                case "get":
+                case "formSimple":
                     if (typeof requiredValues['paramName'] != 'undefined' &&
-                        typeof requiredValues['onLoad'] != 'undefined') {
-                        this.handlePageTransition = this.handleGet;
+                        typeof requiredValues['onLoad'] != 'undefined' &&
+                        typeof requiredValues['method'] != 'undefined') {
+                        this.handleFormSimple();
+                        //The onload function will be called in the window.onLoad 
                     } else {
                         //throw error
                     }
                     break;
-                case "post":
-                    if (typeof requiredValues['formElementName'] != 'undefined' &&
-                        typeof requiredValues['endpoint'] != 'undefined' &&
-                        typeof requiredValues['onLoad'] != 'undefined') {
-                        this.handlePageTransition = this.handlePost;
-                    }
-                    break;
+                case "formComplex":
+                    if (typeof )
+                        break;
                 case "custom":
                     if (typeof requiredValues['callback'] != 'undefined') {
                         const pagination = document.querySelector("#" + this.elementID);
@@ -464,8 +533,6 @@ class ManagedPagination {
                     }
                     break;
             }
-            //run it the first time
-            this.handlePageTransition();
         } else {
             //throw error 
             throw new Error("Please choose a method, from the list of available methods.\n" + this.supportedMethods)
@@ -500,6 +567,8 @@ class ManagedPagination {
 
 
 //Features
+//Make sure to change lets to consts where I can
+//Look into sending the items per page to the backend because that value can change add this when I add the dropdown to change it
 //Handle changing the page let users define a callback that will be passed the values or let them return the values to us
 //add custom events that users can add themselves
 //have a pre load event that lets them load the next n number of pages for the user
@@ -515,9 +584,6 @@ class ManagedPagination {
 //heavily comment the functions with the xml style comments
 //instead of strings use enums instead
 //look into using AJAX methods as well as what is supported
-
-
-//add style support for active as well basically everything i have in the existing css file as well as media queries
 
 //methods to load the content
 //have everything loaded all at once.
