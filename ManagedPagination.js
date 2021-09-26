@@ -12,6 +12,7 @@ class ManagedPagination {
     supportedMethods = ["preloaded", "get", "post", "custom"];
     requiredValues;
     handlePageTransition;
+    showFirstAndLastPage;
 
     createPaginationElement() {
         let paginationDiv = document.createElement('div');
@@ -57,9 +58,19 @@ class ManagedPagination {
         }
 
         paginationDiv.append(leftArrow);
+        if(this.showFirstAndLastPage){
+            let firstPage = document.createElement('a');
+            firstPage.innerHTML = "1..";
+            paginationDiv.append(firstPage)
+        }
         pageNumbers.forEach(p => {
             paginationDiv.append(p);
         })
+        if(this.showFirstAndLastPage){
+            let lastPage = document.createElement('a');
+            lastPage.innerHTML = ".." + this.pages;
+            paginationDiv.append(lastPage)
+        }
         paginationDiv.append(rightArrow);
 
         this.divToReplace.parentNode.replaceChild(paginationDiv, this.divToReplace);
@@ -68,7 +79,7 @@ class ManagedPagination {
     nextPage(e) {
         const pagination = document.querySelector("#" + this.elementID);
         let ActiveElement = pagination.querySelector('.active');
-        const index = this.index(pagination.getElementsByClassName('active'))
+        const index = this.index(pagination.getElementsByClassName('active')) 
         let currentElement = parseInt(ActiveElement.innerHTML);
         if (currentElement + 1 <= this.pages) {
             ActiveElement.classList.remove('active');
@@ -91,7 +102,6 @@ class ManagedPagination {
             }
 
         }
-        this.handlePageTransition();
         e.preventDefault();
     }
 
@@ -122,7 +132,6 @@ class ManagedPagination {
                 document.querySelectorAll('#' + this.elementID + ' > *')[index - 1].classList.add('active')
             }
         }
-        this.handlePageTransition();
         e.preventDefault();
     }
 
@@ -201,19 +210,18 @@ class ManagedPagination {
                 }
             }
         }
-        this.handlePageTransition();
         e.preventDefault();
     }
 
     onLoadEventHandler() {
         document.querySelector('#' + this.elementID).querySelector("#nextPage").addEventListener('click', (e) => {
             this.nextPage(e);
-            this.handleCallback();
+            this.handlePageTransition();
         });
 
         document.querySelector('#' + this.elementID).querySelector("#previousPage").addEventListener('click', (e) => {
             this.previousPage(e);
-            this.handleCallback();
+            this.handlePageTransition();
         });
 
 
@@ -221,17 +229,23 @@ class ManagedPagination {
         for (let i = 0; i < paginationNumbers.length; i++) {
             paginationNumbers[i].addEventListener('click', (e) => {
                 this.handlePaginationClick(e);
-                this.handleCallback();
+                this.handlePageTransition();
             });
         }
 
     }
 
-    index(node) { //S equivalent of JQuery index
+    index(node, selector = '*') { //JS equivalent of JQuery index
         if (NodeList.prototype.isPrototypeOf(node) || HTMLCollection.prototype.isPrototypeOf(node)) {
             node = node[0]
         }
-        return [...node.parentNode.children].indexOf(node)
+        if(selector == '*'){
+            return [...node.parentNode.children].indexOf(node);
+        }else{
+            return [...node.parentNode.querySelectorAll(selector)].indexOf(node)
+        }
+        
+        
     }
 
     generateValidUniqueID() {
@@ -306,6 +320,12 @@ class ManagedPagination {
                 this.fontAwesomePreviousArrow = optionalValues['fontAwesome']['previousPageBtn'];
             }
         }
+
+        if('showFirstAndLastPage' in optionalValues){
+            if(optionalValues['showFirstAndLastPage']){
+                this.showFirstAndLastPage = true;
+            }
+        }
     }
 
     handleStyle(optionalValues, selector, isGlobal = true) {
@@ -375,16 +395,12 @@ class ManagedPagination {
 
     }
 
-    handleCallback() {
-        const pagination = document.querySelector("#" + this.elementID);
-        this.currentPage = parseInt(pagination.getElementsByClassName('active')[0].innerHTML);
-        this.callback(this.currentPage, this.itemsPerPage);
-    }
-
     handlePreLoaded() {
         const pagination = document.querySelector("#" + this.elementID);
         this.currentPage = parseInt(pagination.getElementsByClassName('active')[0].innerHTML);
-        document.querySelectorAll(this.requiredValues['container'] + ' > ' + this.requiredValues['item']).style = "display : none;";
+        document.querySelectorAll(this.requiredValues['container'] + ' > ' + this.requiredValues['item']).forEach(child => {
+            child.style = "display : none;";
+        });
         //we have current page and items per page
         [...document.querySelectorAll(this.requiredValues['container'] + ' > ' + this.requiredValues['item'])].slice(0 + ((this.currentPage - 1) * this.itemsPerPage), this.itemsPerPage + ((this.currentPage - 1) * this.itemsPerPage)).forEach((child) => {
             child.style = "display: block";
@@ -546,11 +562,12 @@ class ManagedPagination {
     constructor(divToReplace, itemCount, method, requiredValues, optionalValues = null) { //take an object instead of props so i can have any amoubt any orddr
         this.divToReplace = divToReplace;
 
-        this.itemCount = 200;
+        this.itemCount = itemCount;
         this.elementID = this.generateValidUniqueID();
 
         this.handleOptionalValues(optionalValues);
         this.pages = Math.ceil(this.itemCount / this.itemsPerPage);
+        console.log("pages", this.pages)
         this.createPaginationElement();
         this.handleRequiredValues(method, requiredValues);
 
@@ -560,16 +577,10 @@ class ManagedPagination {
     }
 }
 
-
-//To handle method i will ask for the method values with is a required object
-//There will always be the method : "" param that takes the method and then based on this i check for the required values
-//different methods
-//pre loaded, GET, POST, custom
-//Pre loaded - All of the elements are present in the DOM but need to be handled in a callback
-//GET the elements are loaded based on page number so i need to use a GET method to refresh the page and pass the page num
-//POST same as get but loaded with a post param inside a form
-//custom i just have a callback function the user handles everything inside themselves this includes ajax
-
+//Add the 1.. and last page.. thing in pagination
+//Only show 1.. and last if the last and first cant be seen
+//add .paginationNumber to index and + 1 so that it matches
+//something breaks adding an extra number and removing 1 when this is enabled look into this with debuuger
 
 //Features
 //Make sure to change lets to consts where I can
@@ -578,23 +589,13 @@ class ManagedPagination {
 //add custom events that users can add themselves
 //have a pre load event that lets them load the next n number of pages for the user
 //add first page last page support so users can see last page
-//get page from url support - add the function for this
 //browser support check what limits browser support i think UUID will affect the most
 //add optional dropdown that lets them change the number of pages
-//work on making fully responsive and work with different font sizes 
-//maybe look into making a style manager class to split this up and reduce file size
+//work on making fully responsive and work with different font sizes
 //eventuyally add server side support for stuff like laravel etc
-//add get support so that when a page is clicked it adds it to the url and reloads the page
-//add post support as well
 //heavily comment the functions with the xml style comments
-//instead of strings use enums instead
-//look into using AJAX methods as well as what is supported
-
-//methods to load the content
-//have everything loaded all at once.
-//use get statements and recieve everything would need to know the total number of items for this approach
-//same as get but support post statements as well again would need the total number of items
-//ill need a new statement for this like method: which can be preloaded, get or post
+//instead of strings use enums instead just make a const object and run object.freeze on it
+//add key binds so that users can use arrow keys or specific keys
 
 //Github stuff
 //define all of the options
