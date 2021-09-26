@@ -520,7 +520,12 @@ class ManagedPagination {
                     }
                     break;
                 case "formComplex":
-                    if (typeof )
+                    if (typeof this.requiredValues['onLoad'] != 'undefined' &&
+                        typeof this.requiredValues['formSelector'] != 'undefined' &&
+                        typeof this.requiredValues['formInputName'] != 'undefined' &&
+                        typeof this.requiredValues['pageNum'] != 'undefined'){
+                            this.handleFormComplex();
+                        }
                         break;
                 case "custom":
                     if (typeof requiredValues['callback'] != 'undefined') {
