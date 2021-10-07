@@ -9,7 +9,7 @@ class ManagedPagination {
     method;
     callback;
     failedState;
-    supportedMethods = ["preloaded", "get", "post", "custom"];
+    supportedMethods = ["preloaded", "formSimple", "formComplex", "custom"];
     requiredValues;
     handlePageTransition;
     showFirstAndLastPage;
@@ -79,26 +79,27 @@ class ManagedPagination {
     nextPage(e) {
         const pagination = document.querySelector("#" + this.elementID);
         let ActiveElement = pagination.querySelector('.active');
-        const index = this.index(pagination.getElementsByClassName('active')) 
+        const index = this.index(pagination.getElementsByClassName('active'), '.paginationNumber')
         let currentElement = parseInt(ActiveElement.innerHTML);
         if (currentElement + 1 <= this.pages) {
             ActiveElement.classList.remove('active');
-            document.querySelectorAll('#' + this.elementID + ' > *').forEach((child) => {
+            document.querySelectorAll('#' + this.elementID + ' > .paginationNumber').forEach((child) => {
                 child.classList.remove('active')
             })
             if (pagination.classList.contains('dynamicPagination')) {
                 //dynamic
-                if (index + 1 > Math.ceil(this.paginationLength / 2) && currentElement + Math.floor(this.paginationLength / 2) < this.pages) {
+                //debugger
+                if (index + 1 > Math.floor(this.paginationLength / 2) && currentElement + Math.floor(this.paginationLength / 2) < this.pages) {
                     pagination.querySelectorAll('.paginationNumber').forEach(num => {
                         num.innerHTML = parseInt(num.innerHTML) + 1
                     })
-                    document.querySelectorAll('#' + this.elementID + ' > *')[index].classList.add('active')
+                    document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[index].classList.add('active')
                 } else {
-                    document.querySelectorAll('#' + this.elementID + ' > *')[index + 1].classList.add('active')
+                    document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[index + 1].classList.add('active')
                 }
             } else {
                 //not dynamic
-                document.querySelectorAll('#' + this.elementID + ' > *')[index + 1].classList.add('active')
+                document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[index + 1].classList.add('active')
             }
 
         }
@@ -108,13 +109,13 @@ class ManagedPagination {
     previousPage(e) {
         const pagination = document.querySelector("#" + this.elementID);
         let ActiveElement = pagination.querySelector('.active');
-        const index = this.index(pagination.getElementsByClassName('active'))
+        const index = this.index(pagination.getElementsByClassName('active'), '.paginationNumber')//this is the issue
         let currentElement = parseInt(ActiveElement.innerHTML);
 
 
         if (currentElement - 1 > 0) {
             ActiveElement.classList.remove('active');
-            document.querySelectorAll('#' + this.elementID + ' > *').forEach((child) => {
+            document.querySelectorAll('#' + this.elementID + ' > .paginationNumber').forEach((child) => {
                 child.classList.remove('active')
             })
             if (pagination.classList.contains('dynamicPagination')) {
@@ -123,13 +124,13 @@ class ManagedPagination {
                     pagination.querySelectorAll('.paginationNumber').forEach(num => {
                         num.innerHTML = parseInt(num.innerHTML) - 1
                     })
-                    document.querySelectorAll('#' + this.elementID + ' > *')[index].classList.add('active')
+                    document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[index].classList.add('active')
                 } else {
-                    document.querySelectorAll('#' + this.elementID + ' > *')[index - 1].classList.add('active')
+                    document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[index - 1].classList.add('active')
                 }
             } else {
                 //not dynamic
-                document.querySelectorAll('#' + this.elementID + ' > *')[index - 1].classList.add('active')
+                document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[index - 1].classList.add('active')
             }
         }
         e.preventDefault();
@@ -140,7 +141,7 @@ class ManagedPagination {
         const pagination = document.querySelector("#" + this.elementID);
         let ActiveElement = pagination.querySelector('.active');
 
-        const index = this.index(pagination.getElementsByClassName('active'))
+        const index = this.index(pagination.getElementsByClassName('active'), '.paginationNumber')
         let currentElement = parseInt(ActiveElement.innerHTML);
         let currentTargetElement = this.index(e.currentTarget);
         let currentTargetElementNum = parseInt(e.currentTarget.innerHTML)
@@ -148,18 +149,18 @@ class ManagedPagination {
         if (difference > 0) {
             if (currentElement + 1 <= this.pages) {
                 ActiveElement.classList.remove('active');
-                document.querySelectorAll('#' + this.elementID + ' > *').forEach((child) => {
+                document.querySelectorAll('#' + this.elementID + ' > .paginationNumber').forEach((child) => {
                     child.classList.remove('active')
                 })
                 if (pagination.classList.contains('dynamicPagination')) {
                     //dynamic
-                    if (index + (1 * difference) > Math.ceil(this.paginationLength / 2) && currentElement + Math.floor(this.paginationLength / 2) < this.pages) {
+                    if (index + (1 * difference) > Math.floor(this.paginationLength / 2) && currentElement + Math.floor(this.paginationLength / 2) < this.pages) {
                         if (currentElement < Math.ceil(this.paginationLength / 2)) {
                             difference -= (Math.floor(this.paginationLength / 2) - (index - 1));
                         }
                         let counter = 0;
-                        for (let i = 0; i < difference; i++) {
-                            if (document.querySelectorAll('#' + this.elementID + ' > *')[this.paginationLength].innerHTML.trim() != this.pages) {
+                        for (let i = 0; i < difference -1; i++) {
+                            if (document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[this.paginationLength-1].innerHTML.trim() != this.pages) {
                                 pagination.querySelectorAll('.paginationNumber').forEach(num => {
                                     num.innerHTML = parseInt(num.innerHTML) + 1
                                 })
@@ -167,13 +168,13 @@ class ManagedPagination {
                                 counter++;
                             }
                         }
-                        document.querySelectorAll('#' + this.elementID + ' > *')[Math.ceil(this.paginationLength / 2) + counter].classList.add('active')
+                        document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[(Math.ceil(this.paginationLength / 2) + counter)-1].classList.add('active')
                     } else {
-                        document.querySelectorAll('#' + this.elementID + ' > *')[(index + (1 * difference))].classList.add('active')
+                        document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[(index + (1 * difference))-2].classList.add('active')
                     }
                 } else {
                     //not dynamic
-                    document.querySelectorAll('#' + this.elementID + ' > *')[(index + (1 * difference))].classList.add('active')
+                    document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[(index + (1 * difference))-1].classList.add('active')
                 }
 
             }
@@ -181,7 +182,7 @@ class ManagedPagination {
             difference = Math.abs(difference);
             if (currentElement - 1 > 0) {
                 ActiveElement.classList.remove('active');
-                document.querySelectorAll('#' + this.elementID + ' > *').forEach((child) => {
+                document.querySelectorAll('#' + this.elementID + ' > .paginationNumber').forEach((child) => {
                     child.classList.remove('active')
                 })
                 if (pagination.classList.contains('dynamicPagination')) {
@@ -191,8 +192,8 @@ class ManagedPagination {
                             difference -= (Math.floor(this.paginationLength / 2) - (this.pages - currentElement));
                         }
                         let counter = 0;
-                        for (let i = 0; i < difference; i++) {
-                            if (document.querySelectorAll('#' + this.elementID + ' > *')[1].innerHTML.trim() != "1") {
+                        for (let i = 0; i < difference -1; i++) {
+                            if (document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[1].innerHTML.trim() != "1") {
                                 pagination.querySelectorAll('.paginationNumber').forEach(num => {
                                     num.innerHTML = parseInt(num.innerHTML) - 1
                                 })
@@ -200,13 +201,13 @@ class ManagedPagination {
                                 counter++;
                             }
                         }
-                        document.querySelectorAll('#' + this.elementID + ' > *')[Math.ceil(this.paginationLength / 2) - counter].classList.add('active')
+                        document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[Math.ceil(this.paginationLength / 2) - counter].classList.add('active')
                     } else {
-                        document.querySelectorAll('#' + this.elementID + ' > *')[index - (1 * difference)].classList.add('active')
+                        document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[index - (1 * difference)].classList.add('active')
                     }
                 } else {
                     //not dynamic
-                    document.querySelectorAll('#' + this.elementID + ' > *')[index - (1 * difference)].classList.add('active')
+                    document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[index - (1 * difference)].classList.add('active')
                 }
             }
         }
@@ -242,7 +243,7 @@ class ManagedPagination {
         if(selector == '*'){
             return [...node.parentNode.children].indexOf(node);
         }else{
-            return [...node.parentNode.querySelectorAll(selector)].indexOf(node)
+            return [...node.parentNode.querySelectorAll(selector)].indexOf(node);
         }
         
         
