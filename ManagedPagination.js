@@ -137,29 +137,25 @@ class ManagedPagination {
     }
 
     handlePaginationClick(e) {
-
         const pagination = document.querySelector("#" + this.elementID);
         let ActiveElement = pagination.querySelector('.active');
-
-        const index = this.index(pagination.getElementsByClassName('active'), '.paginationNumber')
+        const index = this.index(pagination.getElementsByClassName('active'),'.paginationNumber')
         let currentElement = parseInt(ActiveElement.innerHTML);
-        let currentTargetElement = this.index(e.currentTarget);
+        let currentTargetElement = this.index(e.currentTarget, '.paginationNumber');
         let currentTargetElementNum = parseInt(e.currentTarget.innerHTML)
         let difference = currentTargetElement - index;
         if (difference > 0) {
+            //debugger
             if (currentElement + 1 <= this.pages) {
                 ActiveElement.classList.remove('active');
-                document.querySelectorAll('#' + this.elementID + ' > .paginationNumber').forEach((child) => {
-                    child.classList.remove('active')
-                })
                 if (pagination.classList.contains('dynamicPagination')) {
                     //dynamic
                     if (index + (1 * difference) > Math.floor(this.paginationLength / 2) && currentElement + Math.floor(this.paginationLength / 2) < this.pages) {
                         if (currentElement < Math.ceil(this.paginationLength / 2)) {
-                            difference -= (Math.floor(this.paginationLength / 2) - (index - 1));
+                            difference -= (Math.floor(this.paginationLength / 2) - (index));
                         }
                         let counter = 0;
-                        for (let i = 0; i < difference -1; i++) {
+                        for (let i = 0; i < difference; i++) {
                             if (document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[this.paginationLength-1].innerHTML.trim() != this.pages) {
                                 pagination.querySelectorAll('.paginationNumber').forEach(num => {
                                     num.innerHTML = parseInt(num.innerHTML) + 1
@@ -168,23 +164,19 @@ class ManagedPagination {
                                 counter++;
                             }
                         }
-                        document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[(Math.ceil(this.paginationLength / 2) + counter)-1].classList.add('active')
+                        document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[Math.floor(this.paginationLength / 2) + counter].classList.add('active')
                     } else {
-                        document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[(index + (1 * difference))-2].classList.add('active')
+                        document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[(index + (1 * difference))].classList.add('active')
                     }
                 } else {
                     //not dynamic
-                    document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[(index + (1 * difference))-1].classList.add('active')
+                    document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[(index + (1 * difference))].classList.add('active')
                 }
-
             }
         } else if (difference < 0) {
             difference = Math.abs(difference);
             if (currentElement - 1 > 0) {
                 ActiveElement.classList.remove('active');
-                document.querySelectorAll('#' + this.elementID + ' > .paginationNumber').forEach((child) => {
-                    child.classList.remove('active')
-                })
                 if (pagination.classList.contains('dynamicPagination')) {
                     //dynamic
                     if (currentElement - 1 > Math.floor(this.paginationLength / 2) && currentTargetElementNum + Math.floor(this.paginationLength / 2) < this.pages) { //might need <=
@@ -192,8 +184,8 @@ class ManagedPagination {
                             difference -= (Math.floor(this.paginationLength / 2) - (this.pages - currentElement));
                         }
                         let counter = 0;
-                        for (let i = 0; i < difference -1; i++) {
-                            if (document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[1].innerHTML.trim() != "1") {
+                        for (let i = 0; i < difference; i++) {
+                            if (document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[0].innerHTML.trim() != "1") {
                                 pagination.querySelectorAll('.paginationNumber').forEach(num => {
                                     num.innerHTML = parseInt(num.innerHTML) - 1
                                 })
@@ -201,7 +193,7 @@ class ManagedPagination {
                                 counter++;
                             }
                         }
-                        document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[Math.ceil(this.paginationLength / 2) - counter].classList.add('active')
+                        document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[Math.floor(this.paginationLength / 2) - counter].classList.add('active')
                     } else {
                         document.querySelectorAll('#' + this.elementID + ' > .paginationNumber')[index - (1 * difference)].classList.add('active')
                     }
@@ -211,6 +203,7 @@ class ManagedPagination {
                 }
             }
         }
+        this.handlePageTransition();
         e.preventDefault();
     }
 
