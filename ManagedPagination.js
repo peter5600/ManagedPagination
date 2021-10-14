@@ -61,6 +61,9 @@ class ManagedPagination {
         if(this.showFirstAndLastPage){
             let firstPage = document.createElement('a');
             firstPage.innerHTML = "1..";
+            firstPage.addEventListener('click', () => {
+                this.changePagination(1)//test change back to 1 when im done
+            });
             paginationDiv.append(firstPage)
         }
         pageNumbers.forEach(p => {
@@ -69,6 +72,9 @@ class ManagedPagination {
         if(this.showFirstAndLastPage){
             let lastPage = document.createElement('a');
             lastPage.innerHTML = ".." + this.pages;
+            lastPage.addEventListener('click', () => {
+                this.changePagination(this.pages)
+            });
             paginationDiv.append(lastPage)
         }
         paginationDiv.append(rightArrow);
@@ -88,7 +94,6 @@ class ManagedPagination {
             })
             if (pagination.classList.contains('dynamicPagination')) {
                 //dynamic
-                //debugger
                 if (index + 1 > Math.floor(this.paginationLength / 2) && currentElement + Math.floor(this.paginationLength / 2) < this.pages) {
                     pagination.querySelectorAll('.paginationNumber').forEach(num => {
                         num.innerHTML = parseInt(num.innerHTML) + 1
@@ -145,7 +150,6 @@ class ManagedPagination {
         let currentTargetElementNum = parseInt(e.currentTarget.innerHTML)
         let difference = currentTargetElement - index;
         if (difference > 0) {
-            //debugger
             if (currentElement + 1 <= this.pages) {
                 ActiveElement.classList.remove('active');
                 if (pagination.classList.contains('dynamicPagination')) {
@@ -473,6 +477,62 @@ class ManagedPagination {
         this.requiredValues['callback'](this.currentPage, this.itemsPerPage);
     }
 
+    changePagination(number){
+        //this func will take a page num and will change the existing pagination to that page
+        //used for handling ..1 and ..max page as well as any custom function that needs to change the pagination without re generating it
+        
+        //make sure number isn't less than 1 or greater than pageCount
+        if(number < 1 || number > this.pages){
+            //throw an error
+        }
+
+        //unselect the active element
+        const pagination = document.querySelector("#" + this.elementID);
+        let ActiveElement = pagination.querySelector('.active');
+        ActiveElement.classList.remove('active');
+        const elements = pagination.querySelectorAll(".paginationNumber")
+        
+
+        // determine if it should be in the middle or noty
+        if(number > Math.ceil(this.paginationLength / 2) && number + Math.floor(this.paginationLength / 2) < this.pages){
+            //this is a middle number
+            for(let i =0; i < Math.ceil(number/2);i++){
+                console.log("beginning i",i);
+                elements[i].innerHTML = (number - Math.ceil(number/2)) + i;
+            }
+            console.log("middle i", Math.ceil(number/2));
+            elements[Math.ceil(number/2)].innerHTML = number;
+            elements[Math.ceil(number/2)].classList.add('active');
+            for(let i = this.paginationLength -1; i > Math.ceil(number/2); i--){
+                console.log("end i",i);
+                elements[i].innerHTML = (Math.floor(number/2)) +i;
+            }
+            
+        }else if(number <= Math.ceil(this.paginationLength / 2)){
+            //left side of middle number
+            console.log('im on the left side')
+            for(let i =1; i <= this.paginationLength; i++){
+                elements[i -1].innerHTML = i;
+                if(i == number){
+                    elements[i -1].classList.add('active');
+                }
+            }
+        }else if(number + Math.floor(this.paginationLength / 2) >= this.pages){
+            //right side of middle number
+            console.log('im on the right side')
+            for(let i = this.pages, j = this.paginationLength-1; i > this.pages - this.paginationLength; i--, j--){
+                elements[j].innerHTML = i;
+                if(i == number){
+                    elements[j].classList.add('active')
+                }
+            }
+        }
+        //to do this do the check i have in handleclick which checks if it should revolved the pagination or move the active element
+        //if it is in the centre do the x numbers to the left and right of it 
+        //if its a moving one determine whether its less than or greater than if its less than go from 1 and draw them if its greater go from max and draw down
+
+    }
+
     handleRequiredValues(method, requiredValues) {
         /* structure
             Method : String - What method is it
@@ -573,8 +633,7 @@ class ManagedPagination {
 
 //Add the 1.. and last page.. thing in pagination
 //Only show 1.. and last if the last and first cant be seen
-//add .paginationNumber to index and + 1 so that it matches
-//something breaks adding an extra number and removing 1 when this is enabled look into this with debuuger
+//work on changePagination func
 
 //Features
 //Make sure to change lets to consts where I can
@@ -590,10 +649,12 @@ class ManagedPagination {
 //heavily comment the functions with the xml style comments
 //instead of strings use enums instead just make a const object and run object.freeze on it
 //add key binds so that users can use arrow keys or specific keys
+//Make it work with an even nuber of paginationLength
+//Change item count based on the method so preloaded it can be calculated the rest it has to be entered
 
 //Github stuff
 //define all of the options
 //the classes that it uses 
 //how it works
 //the possible errors and why they can be called
-//everything else that a dev might wanna know if they are 
+//everything else that a dev might wanna know if they are
